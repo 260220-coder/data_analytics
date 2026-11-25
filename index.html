@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TXT 데이터 분석 도구</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #64748b;
+      --border: #dbe3ef;
+      --success: #15803d;
+      --warning: #b45309;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .container {
+      width: min(1180px, 94%);
+      margin: 0 auto;
+    }
+
+    header {
+      color: white;
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      padding: 42px 0 36px;
+    }
+
+    header h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+    }
+
+    header p {
+      margin: 0;
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+
+    main {
+      padding: 28px 0 50px;
+    }
+
+    .panel, .result-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(30, 64, 175, 0.06);
+    }
+
+    .panel {
+      padding: 22px;
+      margin-bottom: 22px;
+    }
+
+    .upload-area {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .upload-description {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .upload-description h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+
+    .upload-description p {
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .button {
+      border: 0;
+      border-radius: 9px;
+      padding: 12px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: 0.2s;
+    }
+
+    .button-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .button-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .button-secondary {
+      background: #e8eef9;
+      color: #1e40af;
+    }
+
+    .button-secondary:hover {
+      background: #dbe7fb;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: end;
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-group label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    select {
+      min-width: 170px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      font-size: 14px;
+    }
+
+    .status {
+      margin-top: 15px;
+      color: var(--muted);
+      font-size: 14px;
+      min-height: 20px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .summary-item {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .summary-item .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .summary-item .value {
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+      gap: 18px;
+    }
+
+    .result-card {
+      padding: 19px;
+      overflow: hidden;
+    }
+
+    .result-card h3 {
+      margin: 0 0 7px;
+      font-size: 18px;
+      word-break: break-word;
+    }
+
+    .type-badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    .continuous {
+      background: #dcfce7;
+      color: var(--success);
+    }
+
+    .discrete {
+      background: #fef3c7;
+      color: var(--warning);
+    }
+
+    .mean-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    .mean-label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .mean-value {
+      color: var(--success);
+      font-size: 31px;
+      font-weight: 800;
+    }
+
+    .meta {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 9px 7px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      color: var(--muted);
+      background: #f8fafc;
+      font-weight: 700;
+    }
+
+    td:last-child, th:last-child {
+      text-align: right;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 45px 15px;
+      background: white;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+    }
+
+    .file-name {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 17px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 650px) {
+      header h1 { font-size: 24px; }
+      .button { width: 100%; }
+      .upload-area { display: block; }
+      .upload-area .button { margin-top: 16px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <h1>TXT 데이터 분석 도구</h1>
+      <p>텍스트 파일을 업로드하면 변수별 평균과 빈도표를 자동으로 계산합니다.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <div class="upload-area">
+        <div class="upload-description">
+          <h2>데이터 파일 입력</h2>
+          <p>
+            첫 번째 행은 변수명으로 사용됩니다. 쉼표, 탭, 세미콜론, 파이프 기호로
+            구분된 TXT 파일을 지원합니다.
+          </p>
+          <div id="fileName" class="file-name"></div>
+        </div>
+
+        <div>
+          <label for="fileInput" class="button button-primary">TXT 파일 선택</label>
+          <input id="fileInput" type="file" accept=".txt,.csv,.tsv" />
+          <button id="demoButton" class="button button-secondary">예제 데이터 보기</button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label for="delimiterSelect">구분자</label>
+          <select id="delimiterSelect">
+            <option value="auto">자동 감지</option>
+            <option value=",">쉼표 (,)</option>
+            <option value="tab">탭</option>
+            <option value=";">세미콜론 (;)</option>
+            <option value="|">파이프 (|)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="encodingNote">자료형 판단 기준</label>
+          <select id="typeRule">
+            <option value="auto">자동 판단</option>
+            <option value="numeric">숫자형은 연속형</option>
+            <option value="categorical">숫자형도 이산형 가능</option>
+          </select>
+        </div>
+
+        <button id="analyzeButton" class="button button-primary">분석하기</button>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div class="note">
+        자동 판단에서는 숫자값이 많고 고유값이 10개를 초과하거나 소수점이 포함된 변수를
+        연속형으로 분류합니다. 그 외 변수는 이산형으로 분류합니다.
+      </div>
+    </section>
+
+    <section id="summary" class="summary" hidden></section>
+    <section id="results" class="results">
+      <div class="empty">TXT 파일을 업로드하거나 예제 데이터를 불러오세요.</div>
+    </section>
+  </main>
+
+  <script>
+    let currentText = "";
+    let currentFileName = "";
+
+    const fileInput = document.getElementById("fileInput");
+    const delimiterSelect = document.getElementById("delimiterSelect");
+    const typeRule = document.getElementById("typeRule");
+    const analyzeButton = document.getElementById("analyzeButton");
+    const demoButton = document.getElementById("demoButton");
+    const statusBox = document.getElementById("status");
+    const resultsBox = document.getElementById("results");
+    const summaryBox = document.getElementById("summary");
+    const fileNameBox = document.getElementById("fileName");
+
+    fileInput.addEventListener("change", event => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      currentFileName = file.name;
+      fileNameBox.textContent = `선택된 파일: ${file.name}`;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        currentText = reader.result;
+        statusBox.textContent = "파일을 읽었습니다. 분석하기 버튼을 누르세요.";
+      };
+      reader.onerror = () => {
+        statusBox.textContent = "파일을 읽는 중 오류가 발생했습니다.";
+      };
+      reader.readAsText(file, "UTF-8");
+    });
+
+    demoButton.addEventListener("click", () => {
+      currentFileName = "example.txt";
+      currentText = `고객ID,나이,성별,구매금액,등급
+1,25,남성,120000,Gold
+2,32,여성,85000,Silver
+3,41,여성,154000,Gold
+4,29,남성,62000,Bronze
+5,36,여성,97000,Silver
+6,52,남성,210000,Gold
+7,28,여성,73000,Bronze
+8,44,남성,165000,Gold
+9,39,여성,102000,Silver
+10,31,남성,91000,Silver`;
+      fileNameBox.textContent = "예제 데이터가 선택되었습니다.";
+      delimiterSelect.value = ",";
+      analyze();
+    });
+
+    analyzeButton.addEventListener("click", analyze);
+    delimiterSelect.addEventListener("change", () => {
+      if (currentText) analyze();
+    });
+    typeRule.addEventListener("change", () => {
+      if (currentText) analyze();
+    });
+
+    function detectDelimiter(line) {
+      const candidates = [",", "\\t", ";", "|"];
+      let best = ",";
+      let bestCount = 0;
+
+      candidates.forEach(delimiter => {
+        const count = line.split(delimiter).length - 1;
+        if (count > bestCount) {
+          best = delimiter;
+          bestCount = count;
+        }
+      });
+
+      return best;
+    }
+
+    function parseCSVLine(line, delimiter) {
+      const values = [];
+      let value = "";
+      let insideQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+
+        if (char === '"') {
+          if (insideQuotes && line[i + 1] === '"') {
+            value += '"';
+            i++;
+          } else {
+            insideQuotes = !insideQuotes;
+          }
+        } else if (char === delimiter && !insideQuotes) {
+          values.push(value.trim());
+          value = "";
+        } else {
+          value += char;
+        }
+      }
+
+      values.push(value.trim());
+      return values;
+    }
+
+    function parseText(text) {
+      const lines = text
+        .replace(/^\uFEFF/, "")
+        .split(/\r?\n/)
+        .filter(line => line.trim() !== "");
+
+      if (lines.length < 2) {
+        throw new Error("헤더와 데이터가 포함된 파일이 필요합니다.");
+      }
+
+      let delimiter = delimiterSelect.value;
+      if (delimiter === "auto") {
+        delimiter = detectDelimiter(lines[0]);
+      }
+      if (delimiter === "tab") delimiter = "\t";
+
+      const headers = parseCSVLine(lines[0], delimiter).map((header, index) => {
+        return header || `변수${index + 1}`;
+      });
+
+      const rows = lines.slice(1).map(line => {
+        const values = parseCSVLine(line, delimiter);
+        const row = {};
+
+        headers.forEach((header, index) => {
+          row[header] = values[index] ?? "";
+        });
+
+        return row;
+      });
+
+      return { headers, rows, delimiter };
+    }
+
+    function isNumeric(value) {
+      if (value === null || value === undefined || value.trim() === "") {
+        return false;
+      }
+
+      const normalized = value.replace(/,/g, "").trim();
+      return Number.isFinite(Number(normalized));
+    }
+
+    function classifyColumn(values) {
+      const nonEmpty = values.filter(value => value.trim() !== "");
+      const numericValues = nonEmpty.filter(isNumeric);
+      const numericRatio = nonEmpty.length ? numericValues.length / nonEmpty.length : 0;
+      const uniqueCount = new Set(nonEmpty).size;
+      const hasDecimal = numericValues.some(value => {
+        const normalized = value.replace(/,/g, "").trim();
+        return normalized.includes(".");
+      });
+
+      if (typeRule.value === "numeric") {
+        return numericRatio >= 0.8 ? "continuous" : "discrete";
+      }
+
+      if (typeRule.value === "categorical") {
+        return "discrete";
+      }
+
+      if (
+        numericRatio >= 0.8 &&
+        (hasDecimal || uniqueCount > 10)
+      ) {
+        return "continuous";
+      }
+
+      return "discrete";
+    }
+
+    function formatNumber(number, digits = 2) {
+      return Number(number).toLocaleString("ko-KR", {
+        maximumFractionDigits: digits
+      });
+    }
+
+    function analyze() {
+      if (!currentText) {
+        statusBox.textContent = "먼저 TXT 파일을 선택하세요.";
+        return;
+      }
+
+      try {
+        const { headers, rows } = parseText(currentText);
+
+        const analyses = headers.map(header => {
+          const values = rows.map(row => row[header] ?? "");
+          const type = classifyColumn(values);
+          const nonEmpty = values.filter(value => value.trim() !== "");
+
+          if (type === "continuous") {
+            const numericValues = nonEmpty
+              .filter(isNumeric)
+              .map(value => Number(value.replace(/,/g, "")));
+
+            const mean = numericValues.length
+              ? numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length
+              : NaN;
+
+            return {
+              header,
+              type,
+              count: numericValues.length,
+              missing: values.length - nonEmpty.length,
+              mean
+            };
+          }
+
+          const frequencyMap = new Map();
+
+          nonEmpty.forEach(value => {
+            const key = value.trim();
+            frequencyMap.set(key, (frequencyMap.get(key) || 0) + 1);
+          });
+
+          const frequencies = [...frequencyMap.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map(([value, count]) => ({
+              value,
+              count,
+              percentage: nonEmpty.length ? count / nonEmpty.length * 100 : 0
+            }));
+
+          return {
+            header,
+            type,
+            count: nonEmpty.length,
+            missing: values.length - nonEmpty.length,
+            frequencies
+          };
+        });
+
+        renderSummary(headers.length, rows.length, analyses);
+        renderResults(analyses);
+
+        statusBox.textContent =
+          `${currentFileName || "데이터"} 분석 완료: ${rows.length}개 행, ${headers.length}개 변수`;
+      } catch (error) {
+        resultsBox.innerHTML = `<div class="empty">${escapeHTML(error.message)}</div>`;
+        summaryBox.hidden = true;
+        statusBox.textContent = "분석할 수 없습니다.";
+      }
+    }
+
+    function renderSummary(variableCount, rowCount, analyses) {
+      const continuousCount = analyses.filter(item => item.type === "continuous").length;
+      const discreteCount = analyses.filter(item => item.type === "discrete").length;
+
+      summaryBox.hidden = false;
+      summaryBox.innerHTML = `
+        <div class="summary-item">
+          <div class="label">전체 행 수</div>
+          <div class="value">${formatNumber(rowCount, 0)}</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">전체 변수 수</div>
+          <div class="value">${formatNumber(variableCount, 0)}</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">연속형 변수</div>
+          <div class="value">${formatNumber(continuousCount, 0)}</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">이산형 변수</div>
+          <div class="value">${formatNumber(discreteCount, 0)}</div>
+        </div>
+      `;
+    }
+
+    function renderResults(analyses) {
+      if (!analyses.length) {
+        resultsBox.innerHTML = `<div class="empty">분석할 변수가 없습니다.</div>`;
+        return;
+      }
+
+      resultsBox.innerHTML = analyses.map(item => {
+        if (item.type === "continuous") {
+          return `
+            <article class="result-card">
+              <h3>${escapeHTML(item.header)}</h3>
+              <span class="type-badge continuous">연속형 변수</span>
+
+              <div class="mean-box">
+                <div class="mean-label">평균</div>
+                <div class="mean-value">
+                  ${Number.isFinite(item.mean) ? formatNumber(item.mean) : "계산 불가"}
+                </div>
+              </div>
+
+              <div class="meta">
+                <span>유효값: ${formatNumber(item.count, 0)}</span>
+                <span>결측값: ${formatNumber(item.missing, 0)}</span>
+              </div>
+            </article>
+          `;
+        }
+
+        const rows = item.frequencies.length
+          ? item.frequencies.map(freq => `
+              <tr>
+                <td>${escapeHTML(freq.value)}</td>
+                <td>${formatNumber(freq.count, 0)}</td>
+                <td>${formatNumber(freq.percentage)}%</td>
+              </tr>
+            `).join("")
+          : `
+              <tr>
+                <td colspan="3">유효한 값이 없습니다.</td>
+              </tr>
+            `;
+
+        return `
+          <article class="result-card">
+            <h3>${escapeHTML(item.header)}</h3>
+            <span class="type-badge discrete">이산형 변수</span>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>값</th>
+                  <th>빈도</th>
+                  <th>비율</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+
+            <div class="meta">
+              <span>고유값: ${formatNumber(item.frequencies.length, 0)}</span>
+              <span>결측값: ${formatNumber(item.missing, 0)}</span>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function escapeHTML(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
